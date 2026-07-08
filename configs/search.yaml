@@ -1,0 +1,14 @@
+# CLIP + FAISS/HNSW style search
+clip_model: ViT-L-14
+clip_pretrained: laion2b_s32b_b82k
+embed_dim: 768
+
+catalog_images: data/raw/hm/images        # or DeepFashion image root
+embeddings_out: artifacts/embeddings/catalog.npy
+index_out: artifacts/index/style
+
+# HNSW params (recall/latency trade-off)
+hnsw_M: 32
+ef_construction: 200
+ef_search: 64
+top_k: 12

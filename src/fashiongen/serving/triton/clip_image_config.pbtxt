@@ -1,0 +1,27 @@
+name: "clip_image"
+platform: "tensorrt_plan"
+max_batch_size: 64
+default_model_filename: "clip_image.plan"
+
+# CLIP ViT-L/14 image tower -> 768-d embedding. Used to (a) embed the garment
+# catalog and (b) embed query images for "more like this" search.
+input [
+  {
+    name: "pixel_values"
+    data_type: TYPE_FP16
+    dims: [ 3, 224, 224 ]
+  }
+]
+output [
+  {
+    name: "image_embeds"
+    data_type: TYPE_FP16
+    dims: [ 768 ]
+  }
+]
+
+instance_group [ { count: 2, kind: KIND_GPU } ]
+dynamic_batching {
+  preferred_batch_size: [ 16, 32, 64 ]
+  max_queue_delay_microseconds: 3000
+}

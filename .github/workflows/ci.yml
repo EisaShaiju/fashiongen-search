@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy scipy scikit-learn opencv-python-headless scikit-image pillow pandas pyyaml pytest
+      - name: Lint
+        run: |
+          pip install ruff
+          ruff check src data scripts || true
+      - name: Run CPU tests (metric + search, no GPU)
+        run: pytest -q tests

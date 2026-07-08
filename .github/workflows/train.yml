@@ -1,0 +1,29 @@
+name: Train (self-hosted GPU)
+
+# Manual dispatch: runs the DVC training DAG on a self-hosted GPU runner and
+# logs to the MLflow tracking server. Kept separate from CI so PRs stay cheap.
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "DVC stage to reproduce (blank = full DAG)"
+        required: false
+        default: ""
+
+jobs:
+  train:
+    runs-on: [self-hosted, gpu]
+    env:
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Pull data (DVC remote)
+        run: dvc pull
+      - name: Reproduce pipeline
+        run: |
+          if [ -z "${{ github.event.inputs.stage }}" ]; then dvc repro; \
+          else dvc repro ${{ github.event.inputs.stage }}; fi
+      - name: Push updated artifacts
+        run: dvc push

@@ -1,0 +1,23 @@
+# SDXL LoRA fine-tuning on the garment corpus
+base_model: stabilityai/stable-diffusion-xl-base-1.0
+vae: madebyollin/sdxl-vae-fp16-fix        # fp16-safe VAE
+manifest: data/processed/train_manifest.jsonl
+output_dir: artifacts/lora
+experiment: sdxl-lora
+
+resolution: 1024
+batch_size: 4
+grad_accum: 4
+num_workers: 8
+mixed_precision: bf16
+
+lora_rank: 16
+lora_alpha: 16
+lr: 1.0e-4
+wd: 1.0e-2
+lr_scheduler: cosine
+warmup: 500
+max_steps: 15000
+
+log_every: 25
+save_every: 1000

@@ -1,0 +1,48 @@
+name: "sdxl_unet"
+platform: "tensorrt_plan"
+max_batch_size: 4
+default_model_filename: "unet.plan"
+
+# SDXL UNet denoising step (FP16 TensorRT engine). Latents for 1024px = 4x128x128.
+input [
+  {
+    name: "sample"
+    data_type: TYPE_FP16
+    dims: [ 4, 128, 128 ]
+  },
+  {
+    name: "timestep"
+    data_type: TYPE_FP16
+    dims: [ 1 ]
+  },
+  {
+    name: "encoder_hidden_states"
+    data_type: TYPE_FP16
+    dims: [ 77, 2048 ]
+  },
+  {
+    name: "text_embeds"
+    data_type: TYPE_FP16
+    dims: [ 1280 ]
+  },
+  {
+    name: "time_ids"
+    data_type: TYPE_FP16
+    dims: [ 6 ]
+  }
+]
+output [
+  {
+    name: "noise_pred"
+    data_type: TYPE_FP16
+    dims: [ 4, 128, 128 ]
+  }
+]
+
+# Serve on GPU with multiple instances for throughput; dynamic batching groups
+# concurrent denoising requests (e.g. from parallel generation jobs).
+instance_group [ { count: 1, kind: KIND_GPU } ]
+dynamic_batching {
+  preferred_batch_size: [ 2, 4 ]
+  max_queue_delay_microseconds: 2000
+}

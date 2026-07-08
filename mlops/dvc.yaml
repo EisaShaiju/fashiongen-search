@@ -1,0 +1,57 @@
+# DVC pipeline: reproducible DAG from raw data -> captions/conditioning ->
+# training -> embeddings -> index. `dvc repro` runs only what changed; `dvc.lock`
+# pins data + output hashes for full reproducibility. Large artifacts are pushed
+# to remote storage (S3/GCS) via `dvc push`, keeping git light.
+stages:
+  captions:
+    cmd: python -m data.prepare_captions --articles data/raw/hm/articles.csv --out data/processed/hm_captions.jsonl
+    deps:
+      - data/raw/hm/articles.csv
+      - data/prepare_captions.py
+    outs:
+      - data/processed/hm_captions.jsonl
+
+  conditioning:
+    cmd: python -m data.make_conditioning --images data/raw/viton_hd/train/cloth --out data/processed/viton_hd --cond ${data.conditioning}
+    deps:
+      - data/raw/viton_hd/train/cloth
+      - data/make_conditioning.py
+    params:
+      - data.conditioning
+    outs:
+      - data/processed/viton_hd
+
+  train_lora:
+    cmd: accelerate launch -m fashiongen.training.train_sdxl_lora --config configs/sdxl_lora.yaml
+    deps:
+      - data/processed/train_manifest.jsonl
+      - src/fashiongen/training/train_sdxl_lora.py
+    params:
+      - lora.rank
+      - lora.lr
+      - lora.max_steps
+    outs:
+      - artifacts/lora/final
+
+  train_controlnet:
+    cmd: accelerate launch -m fashiongen.training.train_controlnet --config configs/controlnet.yaml
+    deps:
+      - artifacts/lora/final
+      - data/processed/viton_hd
+      - src/fashiongen/training/train_controlnet.py
+    params:
+      - controlnet.cond_type
+      - controlnet.max_steps
+    outs:
+      - artifacts/controlnet/final
+
+  embed_catalog:
+    cmd: python scripts/build_style_index.py --config configs/search.yaml
+    deps:
+      - src/fashiongen/search/clip_encoder.py
+      - src/fashiongen/search/faiss_index.py
+    params:
+      - search.hnsw_M
+      - search.embed_dim
+    outs:
+      - artifacts/index

@@ -1,0 +1,22 @@
+# SDXL ControlNet training for structural (silhouette/seam) preservation
+base_model: stabilityai/stable-diffusion-xl-base-1.0
+lora_adapters: artifacts/lora/final        # optional: stack on the fine-tuned LoRA
+manifest: data/processed/train_manifest.jsonl
+output_dir: artifacts/controlnet
+experiment: sdxl-controlnet
+
+cond_type: canny                            # canny | softedge | mask
+resolution: 1024
+batch_size: 2
+grad_accum: 8
+num_workers: 8
+mixed_precision: bf16
+
+lr: 1.0e-5
+wd: 1.0e-2
+lr_scheduler: constant_with_warmup
+warmup: 500
+max_steps: 20000
+
+log_every: 25
+save_every: 1000

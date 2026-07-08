@@ -1,0 +1,24 @@
+# Single source of truth for DVC-tracked pipeline params
+data:
+  datasets: [viton_hd, hm, deepfashion]
+  conditioning: canny
+  resolution: 1024
+
+lora:
+  rank: 16
+  lr: 1.0e-4
+  max_steps: 15000
+
+controlnet:
+  cond_type: canny
+  lr: 1.0e-5
+  max_steps: 20000
+
+search:
+  clip_model: ViT-L-14
+  embed_dim: 768
+  hnsw_M: 32
+  ef_search: 64
+
+serving:
+  precision: fp16      # fp16 | int8
